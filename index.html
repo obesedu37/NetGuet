@@ -1,63 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>NetGuet</title>
+    <meta charset="UTF-8">
+    <title>NetGuet - Connexion</title>
     <style>
-        body { background: #36393f; color: white; font-family: sans-serif; }
-        /* ANTI-COPIE DES NOMS */
-        .no-copy { user-select: none; -webkit-user-select: none; cursor: default; color: #00ffff; }
-        .admin { color: #ffcc00; font-weight: bold; text-shadow: 0 0 5px gold; }
-        #messages { height: 80vh; overflow-y: auto; border-bottom: 1px solid #444; padding: 10px; }
-        .orb { width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        body { background: #36393f; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: #2f3136; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 350px; }
+        h2 { text-align: center; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: none; background: #202225; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #5865f2; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #4752c4; }
+        #chat-screen { display: none; width: 90%; max-width: 800px; height: 80vh; flex-direction: column; }
+        #messages { flex: 1; overflow-y: auto; background: #36393f; padding: 20px; border-radius: 8px; margin-bottom: 10px; }
+        .no-copy { user-select: none; -webkit-user-select: none; color: #00ffff; }
+        .admin { color: #ffcc00; font-weight: bold; }
+        .msg-line { margin-bottom: 10px; padding: 5px; border-radius: 4px; }
+        .msg-line:hover { background: #32353b; }
     </style>
 </head>
 <body>
-    <div id="login-screen">
-        <h2>Bienvenue sur NetGuet</h2>
-        <input type="text" id="username" placeholder="Ton pseudo">
-        <button onclick="saveProfile()">Entrer</button>
+
+    <div id="login-screen" class="container">
+        <h2 id="title">Connexion</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Mot de passe">
+        <button onclick="valider()">Entrer sur NetGuet</button>
+        <p style="font-size: 0.8em; text-align: center; color: #b9bbbe;">Tes infos sont enregistrées sur ta base MongoDB.</p>
     </div>
 
-    <div id="chat-screen" style="display:none">
+    <div id="chat-screen">
         <div id="messages"></div>
-        <input type="text" id="input" placeholder="Message...">
-        <button onclick="send()">Envoyer</button>
+        <div style="display: flex;">
+            <input type="text" id="input-msg" placeholder="Ecrire un message..." style="margin: 0; border-radius: 4px 0 0 4px;">
+            <button onclick="envoyer()" style="width: 100px; margin: 0; border-radius: 0 4px 4px 0;">Envoyer</button>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let myUser = localStorage.getItem('user');
+        let monPseudo = localStorage.getItem('netguet_user');
 
-        // Reconnaissance automatique
-        if(myUser) {
-            showChat();
+        // Si on est déjà connecté
+        if(monPseudo) {
+            ouvrirChat();
         }
 
-        function saveProfile() {
-            myUser = document.getElementById('username').value;
-            localStorage.setItem('user', myUser);
-            showChat();
+        function valider() {
+            const email = document.getElementById('email').value;
+            const mdp = document.getElementById('password').value;
+            
+            if(email && mdp) {
+                // Pour l'instant on simplifie : on prend le début de l'email comme pseudo
+                monPseudo = email.split('@')[0]; 
+                localStorage.setItem('netguet_user', monPseudo);
+                ouvrirChat();
+            } else {
+                alert("Remplis tout !");
+            }
         }
 
-        function showChat() {
+        function ouvrirChat() {
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('chat-screen').style.display = 'block';
-            socket.emit('join', { user: myUser });
+            document.getElementById('chat-screen').style.display = 'flex';
+            document.body.style.display = 'block'; // Change le flex centré
+            socket.emit('join', { user: monPseudo });
         }
 
-        function send() {
-            const txt = document.getElementById('input').value;
-            socket.emit('chat_message', { user: myUser, text: txt, orbe: 'cyan' });
-            document.getElementById('input').value = '';
+        function envoyer() {
+            const msg = document.getElementById('input-msg').value;
+            if(msg) {
+                socket.emit('chat_message', { user: monPseudo, text: msg });
+                document.getElementById('input-msg').value = '';
+            }
         }
+
+        // Charger l'historique
+        socket.on('load_history', (msgs) => {
+            msgs.forEach(m => afficherMessage(m));
+        });
 
         socket.on('chat_message', (data) => {
-            const div = document.createElement('div');
-            const isAdmin = data.isAdmin ? 'admin' : '';
-            div.innerHTML = `<span class="orb" style="background:${data.orbe}"></span><b class="no-copy ${isAdmin}">${data.user}</b>: ${data.text}`;
-            document.getElementById('messages').appendChild(div);
+            afficherMessage(data);
         });
+
+        function afficherMessage(data) {
+            const div = document.createElement('div');
+            div.className = "msg-line";
+            const isAdmin = (data.user === "obesedu37") ? 'admin' : '';
+            div.innerHTML = `<b class="no-copy ${isAdmin}">${data.user}</b>: ${data.text}`;
+            document.getElementById('messages').appendChild(div);
+            // Scroll automatique en bas
+            const box = document.getElementById('messages');
+            box.scrollTop = box.scrollHeight;
+        }
     </script>
 </body>
 </html>
