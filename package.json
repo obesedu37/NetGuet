@@ -1,7 +1,6 @@
 {
   "name": "netguet-37",
   "version": "1.0.0",
-  "description": "Tchat privé par obesedu37",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
