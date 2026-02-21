@@ -1,133 +1,100 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>NetGuet - Discord Clone</title>
+    <title>NetGuet</title>
     <style>
-        :root { --main-bg: #36393f; --sidebar: #2f3136; --dark: #202225; --accent: #5865f2; --text: #dcddde; }
-        body { background: var(--main-bg); color: var(--text); font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --bg: #36393f; --side: #2f3136; --dark: #202225; --accent: #5865f2; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; }
         
-        /* ECRAN ACCUEIL */
-        #auth-screen { position: fixed; inset: 0; background: url('https://discord.com/assets/ee94d90291771191a6ed.png'); background-size: cover; display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .auth-card { background: #36393f; padding: 32px; border-radius: 8px; width: 400px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); text-align: center; }
+        /* AUTH */
+        #auth-screen { position: fixed; inset: 0; background: #5865f2; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .auth-card { background: var(--bg); padding: 30px; border-radius: 8px; width: 350px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         
-        /* APP LAYOUT */
-        #app { display: none; width: 100%; height: 100%; }
-        .guilds { width: 72px; background: var(--dark); display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
-        .channels { width: 240px; background: var(--sidebar); display: flex; flex-direction: column; }
-        .chat { flex: 1; display: flex; flex-direction: column; background: var(--main-bg); }
-        
-        /* MESSAGES */
+        /* APP */
+        #app { display: none; width: 100%; height: 100%; flex-direction: row; }
+        .sidebar { width: 240px; background: var(--side); padding: 20px; font-weight: bold; }
+        .chat { flex: 1; display: flex; flex-direction: column; }
         #messages { flex: 1; overflow-y: auto; padding: 20px; }
-        .message-item { display: flex; margin-bottom: 16px; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); margin-right: 16px; }
-        .content b { color: #fff; font-size: 1rem; margin-right: 8px; }
         
-        /* INPUT */
-        .input-box { padding: 0 20px 24px; }
-        input[type="text"], input[type="email"], input[type="password"] { background: #40444b; border: none; color: #fff; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
-        .switch-btn { margin-top: 15px; color: #00aff4; cursor: pointer; font-size: 0.9em; }
+        input { background: #40444b; border: none; color: white; padding: 12px; border-radius: 5px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+        .link { color: #00aff4; cursor: pointer; text-align: center; display: block; margin-top: 10px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
 <div id="auth-screen">
-    <div class="auth-card" id="login-box">
-        <h2>Bienvenue !</h2>
-        <p>Nous sommes ravis de vous revoir !</p>
+    <div class="auth-card">
+        <h2 id="auth-title" style="text-align: center;">Se connecter</h2>
+        <div id="pseudo-field" style="display: none;">
+            <input type="text" id="pseudo" placeholder="PSEUDO">
+        </div>
         <input type="email" id="email" placeholder="E-MAIL">
         <input type="password" id="mdp" placeholder="MOT DE PASSE">
-        <button onclick="connexion()">Se connecter</button>
-        <div class="switch-btn" onclick="toggleAuth()">Besoin d'un compte ? S'inscrire</div>
-    </div>
-    
-    <div class="auth-card" id="register-box" style="display:none">
-        <h2>Créer un compte</h2>
-        <input type="text" id="reg-pseudo" placeholder="NOM D'UTILISATEUR">
-        <input type="email" id="reg-email" placeholder="E-MAIL">
-        <input type="password" id="reg-mdp" placeholder="MOT DE PASSE">
-        <button onclick="inscription()">Continuer</button>
-        <div class="switch-btn" onclick="toggleAuth()">Déjà un compte ?</div>
+        <button id="auth-btn" onclick="validerAuth()">Connexion</button>
+        <span class="link" id="toggle-link" onclick="toggle()">Créer un compte ?</span>
     </div>
 </div>
 
 <div id="app">
-    <div class="guilds"><div class="avatar" style="background:#5865f2; display:flex; align-items:center; justify-content:center;">N</div></div>
-    <div class="channels">
-        <div style="padding: 20px; font-weight: bold; border-bottom: 1px solid #202225;">NetGuet Server</div>
-        <div style="padding: 10px; color: #8e9297;"># général</div>
-    </div>
+    <div class="sidebar">NetGuet<br><br><span style="color:#8e9297"># général</span></div>
     <div class="chat">
         <div id="messages"></div>
-        <div class="input-box">
-            <input type="text" id="msg-input" placeholder="Envoyer un message dans #général" onkeypress="if(event.key==='Enter') envoyer()">
-        </div>
+        <div style="padding: 20px;"><input type="text" id="msg-input" placeholder="Envoyer un message..." onkeypress="if(event.key==='Enter') envoyer()"></div>
     </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    let monPseudo = localStorage.getItem('netguet_pseudo');
+    let isLogin = true;
+    let monPseudo = localStorage.getItem('net_p');
 
-    if(monPseudo) { demarrerApp(); }
+    if(monPseudo) { startApp(); }
 
-    function toggleAuth() {
-        const lb = document.getElementById('login-box');
-        const rb = document.getElementById('register-box');
-        lb.style.display = lb.style.display === 'none' ? 'block' : 'none';
-        rb.style.display = rb.style.display === 'none' ? 'block' : 'none';
+    function toggle() {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? "Se connecter" : "Créer un compte";
+        document.getElementById('auth-btn').innerText = isLogin ? "Connexion" : "Inscription";
+        document.getElementById('pseudo-field').style.display = isLogin ? "none" : "block";
+        document.getElementById('toggle-link').innerText = isLogin ? "Créer un compte ?" : "Déjà un compte ?";
     }
 
-    async function inscription() {
-        const pseudo = document.getElementById('reg-pseudo').value;
-        const email = document.getElementById('reg-email').value;
-        const mdp = document.getElementById('reg-mdp').value;
-        const res = await fetch('/register', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({pseudo, email, mdp})
-        });
-        const data = await res.json();
-        if(data.success) { connecterAuto(data.pseudo); }
-    }
-
-    async function connexion() {
+    async function validerAuth() {
         const email = document.getElementById('email').value;
         const mdp = document.getElementById('mdp').value;
-        const res = await fetch('/login', {
+        const pseudo = document.getElementById('pseudo').value;
+        
+        const res = await fetch('/auth', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({email, mdp})
+            body: JSON.stringify({ email, mdp, pseudo, type: isLogin ? 'login' : 'register' })
         });
+        
         const data = await res.json();
-        if(data.success) { connecterAuto(data.pseudo); } else { alert("Erreur connexion"); }
+        if(data.success) {
+            localStorage.setItem('net_p', data.pseudo);
+            location.reload();
+        } else { alert(data.error); }
     }
 
-    function connecterAuto(p) {
-        localStorage.setItem('netguet_pseudo', p);
-        location.reload();
-    }
-
-    function demarrerApp() {
+    function startApp() {
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('app').style.display = 'flex';
-        socket.emit('chat_message', {user: "Système", text: monPseudo + " a rejoint le serveur."});
     }
 
     function envoyer() {
-        const txt = document.getElementById('msg-input').value;
-        if(txt) {
-            socket.emit('chat_message', {user: monPseudo, text: txt});
-            document.getElementById('msg-input').value = '';
+        const inp = document.getElementById('msg-input');
+        if(inp.value) {
+            socket.emit('chat_message', {user: monPseudo, text: inp.value});
+            inp.value = '';
         }
     }
 
-    socket.on('chat_message', (data) => {
+    socket.on('chat_message', (d) => {
         const div = document.createElement('div');
-        div.className = 'message-item';
-        div.innerHTML = `<div class="avatar"></div><div class="content"><b>${data.user}</b><br>${data.text}</div>`;
+        div.innerHTML = `<p><b style="color:#5865f2">${d.user}</b>: ${d.text}</p>`;
         document.getElementById('messages').appendChild(div);
         document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
     });
@@ -135,8 +102,7 @@
     socket.on('load_history', (msgs) => {
         msgs.forEach(m => {
             const div = document.createElement('div');
-            div.className = 'message-item';
-            div.innerHTML = `<div class="avatar"></div><div class="content"><b>${m.user}</b><br>${m.text}</div>`;
+            div.innerHTML = `<p><b style="color:#5865f2">${m.user}</b>: ${m.text}</p>`;
             document.getElementById('messages').appendChild(div);
         });
     });
