@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NetGuet</title>
+    <style>
+        body { background: #36393f; color: white; font-family: sans-serif; }
+        /* ANTI-COPIE DES NOMS */
+        .no-copy { user-select: none; -webkit-user-select: none; cursor: default; color: #00ffff; }
+        .admin { color: #ffcc00; font-weight: bold; text-shadow: 0 0 5px gold; }
+        #messages { height: 80vh; overflow-y: auto; border-bottom: 1px solid #444; padding: 10px; }
+        .orb { width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div id="login-screen">
+        <h2>Bienvenue sur NetGuet</h2>
+        <input type="text" id="username" placeholder="Ton pseudo">
+        <button onclick="saveProfile()">Entrer</button>
+    </div>
+
+    <div id="chat-screen" style="display:none">
+        <div id="messages"></div>
+        <input type="text" id="input" placeholder="Message...">
+        <button onclick="send()">Envoyer</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let myUser = localStorage.getItem('user');
+
+        // Reconnaissance automatique
+        if(myUser) {
+            showChat();
+        }
+
+        function saveProfile() {
+            myUser = document.getElementById('username').value;
+            localStorage.setItem('user', myUser);
+            showChat();
+        }
+
+        function showChat() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'block';
+            socket.emit('join', { user: myUser });
+        }
+
+        function send() {
+            const txt = document.getElementById('input').value;
+            socket.emit('chat_message', { user: myUser, text: txt, orbe: 'cyan' });
+            document.getElementById('input').value = '';
+        }
+
+        socket.on('chat_message', (data) => {
+            const div = document.createElement('div');
+            const isAdmin = data.isAdmin ? 'admin' : '';
+            div.innerHTML = `<span class="orb" style="background:${data.orbe}"></span><b class="no-copy ${isAdmin}">${data.user}</b>: ${data.text}`;
+            document.getElementById('messages').appendChild(div);
+        });
+    </script>
+</body>
+</html>
