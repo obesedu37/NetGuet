@@ -2,35 +2,35 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const path = require('path');
+const mongoose = require('mongoose');
 
-// Ton nom d'admin secret
-const MON_NOM = "obesedu37";
+// Connexion à la mémoire MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("Mémoire connectée !"))
+  .catch(err => console.log("Erreur de mémoire :", err));
 
-// Pour que le site affiche ton fichier HTML
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Modèle pour enregistrer les messages
+const Message = mongoose.model('Message', { 
+    user: String, 
+    text: String, 
+    date: { type: Date, default: Date.now } 
 });
 
-io.on('connection', (socket) => {
-    console.log('Nouvelle connexion !');
+app.use(express.static(__dirname));
 
-    socket.on('chat_message', (data) => {
-        // On vérifie si c'est toi l'admin
-        const isAdmin = (data.user.toLowerCase() === MON_NOM.toLowerCase());
+io.on('connection', async (socket) => {
+    // Dès qu'on se connecte, on récupère les 50 derniers messages enregistrés
+    const history = await Message.find().sort({date: -1}).limit(50);
+    socket.emit('load_history', history.reverse());
+
+    socket.on('chat_message', async (data) => {
+        // On enregistre le message pour de vrai
+        const newMsg = new Message({ user: data.user, text: data.text });
+        await newMsg.save();
         
-        // On renvoie le message à tout le monde
-        io.emit('chat_message', {
-            user: data.user,
-            text: data.text,
-            orbe: data.orbe,
-            isAdmin: isAdmin
-        });
+        io.emit('chat_message', data);
     });
 });
 
-// Port spécial pour que Render puisse lancer le site
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log('Le site est en ligne !');
-});
+http.listen(PORT, () => console.log("Site en ligne et prêt !"));
