@@ -1,99 +1,106 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>NetGuet - Connexion</title>
+    <title>NetGuet Pro</title>
     <style>
-        body { background: #36393f; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: #2f3136; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 350px; }
-        h2 { text-align: center; margin-bottom: 20px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: none; background: #202225; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #5865f2; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        button:hover { background: #4752c4; }
-        #chat-screen { display: none; width: 90%; max-width: 800px; height: 80vh; flex-direction: column; }
-        #messages { flex: 1; overflow-y: auto; background: #36393f; padding: 20px; border-radius: 8px; margin-bottom: 10px; }
-        .no-copy { user-select: none; -webkit-user-select: none; color: #00ffff; }
-        .admin { color: #ffcc00; font-weight: bold; }
-        .msg-line { margin-bottom: 10px; padding: 5px; border-radius: 4px; }
-        .msg-line:hover { background: #32353b; }
+        :root { --bg: #36393f; --side: #2f3136; --text: #dcddde; --accent: #5865f2; }
+        body { background: var(--bg); color: var(--text); font-family: 'Helvetica', sans-serif; margin: 0; display: flex; height: 100vh; }
+        
+        /* Formulaire de connexion */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .auth-box { background: var(--side); padding: 30px; border-radius: 8px; width: 300px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+        
+        /* Chat */
+        #main-app { display: none; width: 100%; height: 100%; flex-direction: row; }
+        .sidebar { width: 240px; background: var(--side); padding: 20px; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+        
+        .msg { margin-bottom: 15px; }
+        .msg b { color: #fff; margin-right: 10px; }
+        
+        input { background: #40444b; border: none; color: #fff; padding: 12px; border-radius: 5px; width: 100%; margin-bottom: 10px; box-sizing: border-box;}
+        button { background: var(--accent); color: #fff; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="container">
-        <h2 id="title">Connexion</h2>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="valider()">Entrer sur NetGuet</button>
-        <p style="font-size: 0.8em; text-align: center; color: #b9bbbe;">Tes infos sont enregistrées sur ta base MongoDB.</p>
+<div id="auth-screen">
+    <div class="auth-box">
+        <h2 style="text-align:center">Bienvenue</h2>
+        <input type="text" id="reg-pseudo" placeholder="Pseudo">
+        <input type="email" id="reg-email" placeholder="Email">
+        <input type="password" id="reg-mdp" placeholder="Mot de passe">
+        <button onclick="creerCompte()">Créer mon compte</button>
     </div>
+</div>
 
-    <div id="chat-screen">
+<div id="main-app">
+    <div class="sidebar"><h3>NetGuet</h3><p># général</p></div>
+    <div class="chat-area">
         <div id="messages"></div>
-        <div style="display: flex;">
-            <input type="text" id="input-msg" placeholder="Ecrire un message..." style="margin: 0; border-radius: 4px 0 0 4px;">
-            <button onclick="envoyer()" style="width: 100px; margin: 0; border-radius: 0 4px 4px 0;">Envoyer</button>
+        <div style="padding: 20px;">
+            <input type="text" id="msg-input" placeholder="Envoyer un message..." onkeypress="if(event.key==='Enter') envoyer()">
         </div>
     </div>
+</div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let monPseudo = localStorage.getItem('netguet_user');
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    let monPseudo = localStorage.getItem('pseudo');
 
-        // Si on est déjà connecté
-        if(monPseudo) {
-            ouvrirChat();
-        }
+    if(monPseudo) { afficherApp(); }
 
-        function valider() {
-            const email = document.getElementById('email').value;
-            const mdp = document.getElementById('password').value;
-            
-            if(email && mdp) {
-                // Pour l'instant on simplifie : on prend le début de l'email comme pseudo
-                monPseudo = email.split('@')[0]; 
-                localStorage.setItem('netguet_user', monPseudo);
-                ouvrirChat();
-            } else {
-                alert("Remplis tout !");
-            }
-        }
-
-        function ouvrirChat() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('chat-screen').style.display = 'flex';
-            document.body.style.display = 'block'; // Change le flex centré
-            socket.emit('join', { user: monPseudo });
-        }
-
-        function envoyer() {
-            const msg = document.getElementById('input-msg').value;
-            if(msg) {
-                socket.emit('chat_message', { user: monPseudo, text: msg });
-                document.getElementById('input-msg').value = '';
-            }
-        }
-
-        // Charger l'historique
-        socket.on('load_history', (msgs) => {
-            msgs.forEach(m => afficherMessage(m));
+    async function creerCompte() {
+        const pseudo = document.getElementById('reg-pseudo').value;
+        const email = document.getElementById('reg-email').value;
+        const mdp = document.getElementById('reg-mdp').value;
+        
+        if(!pseudo || !email || !mdp) return alert("Remplis tout !");
+        
+        const res = await fetch('/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({pseudo, email, mdp})
         });
+        
+        if(res.ok) {
+            localStorage.setItem('pseudo', pseudo);
+            location.reload();
+        }
+    }
 
-        socket.on('chat_message', (data) => {
-            afficherMessage(data);
-        });
+    function afficherApp() {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'flex';
+    }
 
-        function afficherMessage(data) {
+    function envoyer() {
+        const text = document.getElementById('msg-input').value;
+        if(text) {
+            socket.emit('chat_message', { user: monPseudo, text: text });
+            document.getElementById('msg-input').value = '';
+        }
+    }
+
+    socket.on('chat_message', (data) => {
+        const div = document.createElement('div');
+        div.className = "msg";
+        div.innerHTML = `<b>${data.user}</b> <span>${data.text}</span>`;
+        document.getElementById('messages').appendChild(div);
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    });
+
+    socket.on('load_history', (msgs) => {
+        msgs.forEach(m => {
             const div = document.createElement('div');
-            div.className = "msg-line";
-            const isAdmin = (data.user === "obesedu37") ? 'admin' : '';
-            div.innerHTML = `<b class="no-copy ${isAdmin}">${data.user}</b>: ${data.text}`;
+            div.className = "msg";
+            div.innerHTML = `<b>${m.user}</b> <span>${m.text}</span>`;
             document.getElementById('messages').appendChild(div);
-            // Scroll automatique en bas
-            const box = document.getElementById('messages');
-            box.scrollTop = box.scrollHeight;
-        }
-    </script>
+        });
+    });
+</script>
 </body>
 </html>
