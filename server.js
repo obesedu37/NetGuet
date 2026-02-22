@@ -4,10 +4,10 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const mongoose = require('mongoose');
 
-// Connexion à la base de données
+// On utilise ton lien corrigé depuis Render
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ MongoDB Connecté pour ObeChat"))
-  .catch(err => console.error("❌ Erreur de lien MongoDB :", err));
+  .catch(err => console.error("❌ Erreur de lien :", err));
 
 const User = mongoose.model('User', { email: String, mdp: String, pseudo: String });
 const Message = mongoose.model('Message', { user: String, text: String, date: { type: Date, default: Date.now } });
@@ -21,10 +21,10 @@ app.post('/auth', async (req, res) => {
         if (type === 'login') {
             const user = await User.findOne({ email, mdp });
             if (user) return res.json({ success: true, pseudo: user.pseudo });
-            return res.status(401).json({ error: "Email ou mot de passe incorrect" });
+            return res.status(401).json({ error: "Compte introuvable" });
         } else {
             const existant = await User.findOne({ email });
-            if (existant) return res.status(400).json({ error: "Compte déjà pris" });
+            if (existant) return res.status(400).json({ error: "Email déjà utilisé" });
             const nouveau = new User({ email, mdp, pseudo });
             await nouveau.save();
             return res.json({ success: true, pseudo });
@@ -44,4 +44,4 @@ io.on('connection', async (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log("🚀 ObeChat est en ligne"));
+http.listen(PORT, () => console.log("🚀 ObeChat en ligne"));
