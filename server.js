@@ -4,9 +4,10 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const mongoose = require('mongoose');
 
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("✅ MongoDB Connecté"))
-  .catch(err => console.error("❌ Erreur MongoDB:", err));
+// Connexion à la base de données
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connecté pour ObeChat"))
+  .catch(err => console.error("❌ Erreur de lien MongoDB :", err));
 
 const User = mongoose.model('User', { email: String, mdp: String, pseudo: String });
 const Message = mongoose.model('Message', { user: String, text: String, date: { type: Date, default: Date.now } });
@@ -23,12 +24,12 @@ app.post('/auth', async (req, res) => {
             return res.status(401).json({ error: "Email ou mot de passe incorrect" });
         } else {
             const existant = await User.findOne({ email });
-            if (existant) return res.status(400).json({ error: "Compte déjà existant" });
+            if (existant) return res.status(400).json({ error: "Compte déjà pris" });
             const nouveau = new User({ email, mdp, pseudo });
             await nouveau.save();
             return res.json({ success: true, pseudo });
         }
-    } catch (e) { res.status(500).json({ error: "Erreur technique serveur" }); }
+    } catch (e) { res.status(500).json({ error: "Erreur de base de données" }); }
 });
 
 io.on('connection', async (socket) => {
@@ -43,4 +44,4 @@ io.on('connection', async (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log("🚀 Serveur prêt"));
+http.listen(PORT, () => console.log("🚀 ObeChat est en ligne"));
