@@ -7,40 +7,40 @@
         :root { --bg: #36393f; --sidebar: #2f3136; --dark: #202225; --accent: #5865f2; --text: #ffffff; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         #auth-screen { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 999; }
-        .auth-card { background: var(--bg); padding: 30px; border-radius: 8px; width: 320px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .auth-card { background: var(--bg); padding: 30px; border-radius: 8px; width: 320px; text-align: center; }
         #app { display: none; width: 100%; height: 100%; flex-direction: row; }
-        .side { width: 240px; background: var(--sidebar); padding: 20px; font-weight: bold; }
+        .side { width: 240px; background: var(--sidebar); padding: 20px; font-weight: bold; font-size: 20px; }
         .chat { flex: 1; display: flex; flex-direction: column; }
         #messages { flex: 1; overflow-y: auto; padding: 20px; }
         input { background: #40444b; border: none; color: white; padding: 12px; border-radius: 5px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
         button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
-        .msg { margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #42454a; }
+        .msg { margin-bottom: 10px; border-bottom: 1px solid #42454a; padding-bottom: 5px; }
     </style>
 </head>
 <body>
 <div id="auth-screen">
     <div class="auth-card">
+        <h1>ObeChat</h1>
         <h2 id="title">Connexion</h2>
         <div id="p-box" style="display:none"><input type="text" id="p" placeholder="PSEUDO"></div>
         <input type="email" id="e" placeholder="EMAIL">
         <input type="password" id="m" placeholder="MOT DE PASSE">
-        <button onclick="valider()">C'est parti !</button>
+        <button onclick="valider()">ENTRER</button>
         <p style="color:#00aff4; cursor:pointer; margin-top:15px;" onclick="toggle()">Créer un compte</p>
     </div>
 </div>
 <div id="app">
-    <div class="side">ObeChat Server</div>
+    <div class="side">ObeChat</div>
     <div class="chat">
         <div id="messages"></div>
-        <div style="padding:20px;"><input type="text" id="inp" placeholder="Envoyer un message..." onkeypress="if(event.key==='Enter') envoyer()"></div>
+        <div style="padding:20px;"><input type="text" id="inp" placeholder="Message..." onkeypress="if(event.key==='Enter') envoyer()"></div>
     </div>
 </div>
-
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
     const socket = io();
     let isLogin = true;
-    let monPseudo = localStorage.getItem('net_user');
+    let monPseudo = localStorage.getItem('obe_user');
     if(monPseudo) { showApp(); }
     function toggle() {
         isLogin = !isLogin;
@@ -59,10 +59,10 @@
             });
             const data = await res.json();
             if(data.success) {
-                localStorage.setItem('net_user', data.pseudo);
+                localStorage.setItem('obe_user', data.pseudo);
                 location.reload();
-            } else { alert("Erreur : " + data.error); }
-        } catch(e) { alert("Le serveur redémarre... attends 10 secondes."); }
+            } else { alert(data.error); }
+        } catch(e) { alert("Erreur serveur : Vérifie ton lien MongoDB dans Render."); }
     }
     function showApp() { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('app').style.display = 'flex'; }
     function envoyer() {
@@ -70,7 +70,7 @@
         if(val && monPseudo) { socket.emit('chat_message', { user: monPseudo, text: val }); document.getElementById('inp').value = ''; }
     }
     socket.on('chat_message', d => addMsg(d));
-    socket.on('load_history', ms => { ms.forEach(m => addMsg(m)); });
+    socket.on('load_history', ms => ms.forEach(m => addMsg(m)));
     function addMsg(d) {
         const div = document.createElement('div');
         div.className = "msg";
